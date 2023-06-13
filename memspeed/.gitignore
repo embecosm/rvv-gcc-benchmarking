@@ -1,0 +1,10 @@
+# Backup files
+*~
+# object viles
+*.o
+# Executables
+demo-static
+demo-vector
+# Intermediate C files
+smem-static.c
+smem-vector.c
