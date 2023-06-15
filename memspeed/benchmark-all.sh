@@ -7,11 +7,6 @@
 
 # SPDX-License-Identifier: GPL-3.0-or-later
 
-PATH=~/gittrees/mustang/install/bin:$PATH
-plugin=../../build/qemu/tests/plugin/libinsn.so,inline=on
-sizes=$(./gensizes 19 1048576)
-tmp=$(mktemp)
-
 do_csv="no"
 if [ $# -eq 1 ]
 then
@@ -24,6 +19,16 @@ then
 	exit 0
     fi
 fi
+
+if [ "x${QEMU_BUILD_DIR}" = "x" ]
+then
+    echo "Must specify QEMU_BUILD_DIR environment variable"
+    exit 1
+fi
+
+plugin=${QEMU_BUILD_DIR}/tests/plugin/libinsn.so,inline=on
+sizes=$(./gensizes 19 1048576)
+tmp=$(mktemp)
 
 if [ "${do_csv}" = "yes" ]
 then
