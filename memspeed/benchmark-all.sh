@@ -63,11 +63,11 @@ do
     fi
 
     # Standard with vector compilation
-    sv_dinst=$(qemu-riscv64 -cpu rv64,v=true,Zfh=true,Zicsr=true -d plugin \
-			    -plugin ${plugin} \
+    sv_dinst=$(qemu-riscv64 -cpu rv64,v=true,vext_spec=v1.0,Zfh=true,Zicsr=true \
+			    -d plugin -plugin ${plugin} \
 			    demo-standard-vector ${s} dummy 2>&1 | \
 		   sed -n -e 's/insns: //p')
-    qemu-riscv64 -cpu rv64,v=true,Zfh=true,Zicsr=true -d plugin \
+    qemu-riscv64 -cpu rv64,v=true,vext_spec=v1.0,Zfh=true,Zicsr=true -d plugin \
 		 -plugin ${plugin} -D ${tmp} demo-standard-vector ${s} real
     sv_res=$?
     sv_rinst=$(sed ${tmp} -n -e 's/insns: //p')
@@ -81,11 +81,11 @@ do
     fi
 
     # Vector with vector compilation
-    vv_dinst=$(qemu-riscv64 -cpu rv64,v=true,Zfh=true,Zicsr=true -d plugin \
+    vv_dinst=$(qemu-riscv64 -cpu rv64,v=true,vext_spec=v1.0,Zfh=true,Zicsr=true -d plugin \
 			    -plugin ${plugin} \
 			    demo-vector-vector ${s} dummy 2>&1 | \
 		   sed -n -e 's/insns: //p')
-    qemu-riscv64 -cpu rv64,v=true,Zfh=true,Zicsr=true -d plugin \
+    qemu-riscv64 -cpu rv64,v=true,vext_spec=v1.0,Zfh=true,Zicsr=true -d plugin \
 		 -plugin ${plugin} -D ${tmp} demo-vector-vector ${s} real
     vv_res=$?
     vv_rinst=$(sed ${tmp} -n -e 's/insns: //p')
