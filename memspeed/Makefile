@@ -7,54 +7,83 @@
 
 # SPDX-License-Identifier: GPL-3.0-or-later
 
-QEMU = qemu-riscv64
-QEMU_SARGS = -cpu rv64,Zicsr=true
-QEMU_VARGS = -cpu rv64,v=true,Zfh=true,Zicsr=true
+# Host tools
+HOST_CC = gcc
+HOST_CFLAGS = -ggdb3 -O2
+HOST_LIBS = -lm
+
+# Target tools
 CC = riscv64-unknown-elf-gcc
 AS = riscv64-unknown-elf-gcc
 SCFLAGS = -march=rv64gc_zicsr -mabi=lp64d -ggdb3 -O2 -save-temps
-VCFLAGS = -march=rv64gcv_zicsr -mabi=lp64d -ggdb3 -O2 -save-temps
-ASFLAGS = -march=rv64gcv_zicsr -mabi=lp64d -ggdb3 -O2 -save-temps
+VCFLAGS = -march=rv64gcv_zfh_zicsr -mabi=lp64d -ggdb3 -O2 -save-temps
+ASFLAGS = -march=rv64gcv_zfh_zicsr -mabi=lp64d -ggdb3 -O2 -save-temps
 LDFLAGS =
 
-SOBJS = smain.o smem-asm.o smem-static.o utils.o
-VOBJS = vmain.o smem-asm.o smem-vector.o utils.o vmem.o
-SEXE = demo-static
-VEXE = demo-vector
+# Object files for each target executable
+SSOBJS = ssmain.o smem-scalar.o utils.o
+SVOBJS = svmain.o smem-vector.o utils.o
+VVOBJS = vvmain.o utils.o vmem-asm.o
+
+# The target executables
+SSEXE = demo-standard-scalar
+SVEXE = demo-standard-vector
+VVEXE = demo-vector-vector
+
+# Host executable
+EXE=gensizes
+SRC=gensizes.c
 
 .PHONY: all
-all: $(SEXE) $(VEXE)
-	@$(QEMU) $(QEMU_SARGS) $(SEXE)
-	@$(QEMU) $(QEMU_VARGS) $(VEXE)
+all: $(EXE) $(SSEXE) $(SVEXE) $(VVEXE)
 
-$(SEXE): $(SOBJS)
+$(EXE): $(SRC)
+	$(HOST_CC) $(HOST_CFLAGS) $^ $(HOST_LIBS) -o $@
+
+$(SSEXE): $(SSOBJS)
 	$(CC) $(SCFLAGS) $(LDFLAGS) $^ -o $@
 
-$(VEXE): $(VOBJS)
+$(SVEXE): $(SVOBJS)
 	$(CC) $(VCFLAGS) $(LDFLAGS) $^ -o $@
 
-smain.o: smain.c utils.h
+$(VVEXE): $(VVOBJS)
+	$(CC) $(VCFLAGS) $(LDFLAGS) $^ -o $@
+
+# The different main programs
+ssmain.o: ssmain.c utils.h
 	$(CC) $(SCFLAGS) -c $< -o $@
 
-smem-asm.o: smem-asm.S
-	$(AS) $(ASFLAGS) -c $< -o $@
+svmain.o: svmain.c utils.h
+	$(CC) $(VCFLAGS) -c $< -o $@
 
-smem-static.o: smem-static.c
+vvmain.o: vvmain.c utils.h
+	$(CC) -DVECTOR $(VCFLAGS) -c $< -o $@
+
+# The difference memcpy versions
+smem-scalar.o: smem-scalar.c
 	$(CC) $(SCFLAGS) -c $< -o $@
 
 smem-vector.o: smem-vector.c
 	$(CC) $(VCFLAGS) -c $< -o $@
 
+vmem-asm.o: vmem-asm.S
+	$(AS) $(ASFLAGS) -c $< -o $@
+
+# Utils
 utils.o: utils.c utils.h
 	$(CC) $(SCFLAGS) -c $< -o $@
 
-vmain.o: vmain.c utils.h
-	$(CC) $(VCFLAGS) -c $< -o $@
+# Generated source
+ssmain.c: main.c
+	cp $^ $@
 
-vmem.o: vmem.S
-	$(AS) $(ASFLAGS) -c $< -o $@
+svmain.c: main.c
+	cp $^ $@
 
-smem-static.c: smem.c
+vvmain.c: main.c
+	cp $^ $@
+
+smem-scalar.c: smem.c
 	cp $^ $@
 
 smem-vector.c: smem.c
@@ -62,6 +91,7 @@ smem-vector.c: smem.c
 
 .PHONY: clean
 clean:
-	$(RM) $(SOBJS) $(VOBJS) $(SEXE) $(VEXE)
+	$(RM) $(SSOBJS) $(SVOBJS) $(VVOBJS)
+	$(RM) $(EXE) $(SSEXE) $(SVEXE) $(VVEXE)
 	$(RM) *.s *.i
-	$(RM) smem-static.c smem-vector.c
+	$(RM) smem-scalar.c smem-vector.c ssmain.c svmain.c vvmain.c
